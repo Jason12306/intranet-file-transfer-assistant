@@ -2,6 +2,8 @@
 
 <img src="src/renderer/assets/imgs/local-network.svg" width="30%"/>
 
+[简体中文](./README-zh.md)
+
 ## Introduction
 
 A simple, lightweight, high-speed intranet (large) file transfer assistant
@@ -26,3 +28,5 @@ Use the current device as a resource server to achieve resource interoperability
 
 - [ ] Internationalization
 - [ ] UI optimization
+
+Welcome to PR 👏🏻👏🏻
