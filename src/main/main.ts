@@ -3,6 +3,7 @@ import path, { resolve } from 'path'
 import fs from 'fs'
 import electronConfig from '../../electron-vue.config'
 import { run as runInnerServer } from './inner-server'
+import { GET_CONFIG } from '../constants'
 import { EnvEnum, getRendererDir } from './utils'
 import './ipc'
 
@@ -37,36 +38,27 @@ const createWindow = async (localUrl: string) => {
   })
 
   win.setMenuBarVisibility(!false)
+  win.loadURL(localUrl)
 
-  if (app.isPackaged) {
-    win.loadURL(localUrl)
-  } else {
-    win.loadURL(process.env.CLIENT_URL || '')
+  if (!app.isPackaged) {
     win.webContents.openDevTools()
   }
   return win
 }
 
-const injectConfig = (apiUrl: string) => {
-  fs.writeFileSync(
-    path.resolve(getRendererDir(), 'injected-config.json'),
-    JSON.stringify(
-      {
-        baseUrl: apiUrl,
-      },
-      null,
-      2
-    )
-  )
-}
+app.whenReady().then(() => {
+  runInnerServer()
+    .then(async ({ localUrl, apiUrl }) => {
+      // ipcMain.handle(GET_CONFIG, () => {
+      //   return { apiUrl, localUrl }
+      // })
 
-runInnerServer().then(({ localUrl, apiUrl }) => {
-  app
-    .whenReady()
-    .then(async () => {
-      injectConfig(apiUrl)
+      const params = '?api=' + apiUrl + '&localUrl=' + localUrl
+      const url = app.isPackaged
+        ? localUrl + params
+        : process.env.CLIENT_URL + params
 
-      await createWindow(localUrl)
+      createWindow(url)
     })
     .catch((err) => {
       console.log(err)
@@ -80,7 +72,7 @@ runInnerServer().then(({ localUrl, apiUrl }) => {
 // @ts-ignore
 const menu = Menu.buildFromTemplate([
   {
-    label: 'electron + vue3',
+    label: 'transfer assistant',
     submenu: [
       { role: 'copy', label: '复制' },
       { role: 'cut', label: '剪切' },
@@ -93,4 +85,4 @@ const menu = Menu.buildFromTemplate([
     ],
   },
 ])
-Menu.setApplicationMenu(menu)
+// Menu.setApplicationMenu(menu)

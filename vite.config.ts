@@ -10,6 +10,9 @@ const root = resolve(process.cwd())
 // @ts-ignore
 export default defineConfig(({ command, mode, ssrBuild }) => {
   return {
+    server: {
+      host: true,
+    },
     plugins: [
       vue(),
       Components({

@@ -1,6 +1,6 @@
-import { SELECT_DIR } from '../constants'
+import { GET_CONFIG, SELECT_DIR } from '../constants'
 
-const { contextBridge, ipcRenderer } = require('electron/renderer')
+import { contextBridge, ipcRenderer } from 'electron/renderer'
 
 contextBridge.exposeInMainWorld('electronAPI', {
   selectDir: () => ipcRenderer.invoke(SELECT_DIR),

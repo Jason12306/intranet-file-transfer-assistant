@@ -24,5 +24,7 @@ export const isProd = () => process.env.GLOBAL_IS_PACKAGED === EnvEnum.prod
 
 export const isDev = () => process.env.GLOBAL_IS_PACKAGED === EnvEnum.dev
 export const getRendererDir = () => {
-  return isDev() ? path.resolve('src/renderer') : path.resolve('../renderer')
+  return isDev()
+    ? path.resolve(__dirname, '../../..')
+    : path.resolve(__dirname, '../renderer')
 }

@@ -1,0 +1,86 @@
+.flex {
+  display: flex;
+}
+
+.align-center {
+  align-items: center;
+}
+
+.draggable {
+  -webkit-app-region: drag;
+}
+body {
+  height: 100vh;
+}
+
+.is-dir {
+  cursor: pointer;
+  text-decoration: underline;
+  &:active {
+    color: red;
+  }
+}
+
+.is-not-dir .filename {
+  /* margin-left: 28px; */
+}
+
+.file-list {
+  display: flex;
+  margin: 0.5rem 0;
+  gap: 16px 8px;
+  align-items: center;
+}
+
+.download {
+  text-decoration: underline;
+  color: blue;
+  margin-left: 1rem;
+  cursor: pointer;
+}
+
+.header,
+.content {
+  padding: 0 16px;
+}
+
+.header h1 {
+  margin: 0;
+  padding: 1rem;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header .tips {
+  font-size: 13px;
+  color: #666;
+}
+
+.content,
+.header {
+  max-width: 750px;
+  margin: 0 auto;
+}
+
+.upload-area {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.upload-dragger {
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+.storage-dir {
+  word-break: break-all;
+}
+ul {
+  padding: 0;
+}
