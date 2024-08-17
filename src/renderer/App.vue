@@ -272,7 +272,13 @@ const getNewDir = async () => {
     </div>
     <!-- <input type="file" multiple @change="selectFile" /> -->
 
-    <h3 class="storage-dir">当前目录：{{ storageDir }}</h3>
+    <div class="flex align-center">
+      <h3 class="storage-dir">当前目录：{{ storageDir }}</h3>
+      <a-button type="link" @click="fetchFiles">
+        <redo-outlined />
+        刷新
+      </a-button>
+    </div>
     <ul>
       <li v-if="hasPreviousLevel" class="is-dir" @click="goback">[上级目录]</li>
       <li

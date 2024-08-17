@@ -1,21 +1,28 @@
-# 内网文件传输助手
+# Intranet File Transfer Assistant
 
-<img src="src/renderer/assets/imgs/local-network.svg" width="50%"/>
+<img src="src/renderer/assets/imgs/local-network.svg" width="30%"/>
 
-## 介绍
+## Introduction
 
-一款简单、轻量、高传输速率的文件传输助手客户端
+A simple, lightweight, high-speed intranet (large) file transfer assistant
 
-## 为什么
+## Why
 
-跨平台传输文件麻烦
-经过外网不安全 速度慢
+- Cross-platform file transfer is troublesome and slow, especially for large files
 
-## 原理
+- Transferring files through the external network is unsafe and slow
 
-使当前设备作为资源服务器，实现资源互通
+## Idea
 
-## 使用
+Use the current device as a resource server to achieve resource interoperability
 
-1. 确保设备处于同一局域网下
-2. 安装客户端并运行，其他设备通过浏览器打开资源服务器网址，即可实现文件传输
+## Usage
+
+1. Make sure all devices are in the same LAN
+
+2. Install the client and run it. Other devices can open the resource server URL through the browser to achieve file transfer
+
+## Todo
+
+- [ ] Internationalization
+- [ ] UI optimization
