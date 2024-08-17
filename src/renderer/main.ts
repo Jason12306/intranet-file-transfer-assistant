@@ -3,10 +3,19 @@ import App from './App.vue'
 import { createPinia } from 'pinia'
 // import initRouter from './router'
 import 'normalize.css'
-const pinia = createPinia()
+import './style.css'
+import { checkIfInElectron } from './utils'
+import { initAxios } from './api/http'
+;(async function () {
+  checkIfInElectron()
 
-const app = createApp(App)
-app.use(pinia)
-// app.use(initRouter())
+  await initAxios()
 
-app.mount('#app')
+  const pinia = createPinia()
+
+  const app = createApp(App)
+  app.use(pinia)
+  // app.use(initRouter())
+
+  app.mount('#app')
+})()

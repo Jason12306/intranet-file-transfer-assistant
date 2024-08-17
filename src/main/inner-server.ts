@@ -8,12 +8,21 @@ import multer from '@koa/multer'
 import cors from '@koa/cors'
 import fs from 'fs'
 import path from 'path'
-import { getRendererDir, isProd, responseWrapper } from './utils'
+import {
+  ResponseCodeEnum,
+  getRendererDir,
+  isProd,
+  responseWrapper,
+} from './utils'
 import { bodyParser } from '@koa/bodyparser'
 import { app } from 'electron'
+import proxy from 'koa-proxies'
 
-const defaultDest = app.getPath('documents') + '/'
-// const defaultDest = app.getPath('downloads') + '/sso/'
+let defaultDest = path.resolve(app.getPath('documents'))
+
+const setDefaultDest = (newDest: string) => {
+  defaultDest = newDest
+}
 
 const handleExistsFile = (filename: string) => {
   if (fs.existsSync(filename)) {
@@ -50,29 +59,42 @@ const initRouter = (app: Koa<Koa.DefaultState, Koa.DefaultContext>) => {
       // console.log('ctx.request.file', ctx.request.files)
       // console.log('ctx.file', ctx.files)
       // console.log('ctx.request.body', ctx.request.body)
+      const { chunkNo, totalChunk } = ctx.request.body
+      const chunkNoNum = Number(chunkNo)
+      const totalChunkNum = Number(totalChunk)
       const files: multer.File[] = ctx.files?.jasonfiles
       if (!files) {
         ctx.body = 'not upload files'
         return
       }
       for (const f of Array.from(files)) {
-        let filename = path.resolve(
+        const filename = path.resolve(
           defaultDest,
           Buffer.from(f.originalname, 'latin1').toString('utf8')
         )
 
-        filename = handleExistsFile(filename)
+        if (chunkNoNum === 1 && fs.existsSync(filename)) {
+          ctx.body = responseWrapper('存在重名文件', ResponseCodeEnum.error)
+          return
+        }
 
-        fs.writeFileSync(filename, f.buffer)
+        // filename = handleExistsFile(filename)
+
+        if (totalChunkNum !== 1) {
+          // filename = filename + '.chunk.' + chunkNoNum
+        }
+
+        fs.appendFileSync(filename, f.buffer)
       }
-      ctx.body = '上传完成'
+
+      ctx.body = responseWrapper('上传完成')
     }
   )
 
   // 文件列表
-  router.post('/', (ctx) => {
-    const { dest } = ctx.request.body
-    const realDest = dest || defaultDest
+  router.post('/file-list', (ctx) => {
+    const { root, dest } = ctx.request.body
+    const realDest = path.resolve(root || defaultDest, dest || '')
     const files = fs.readdirSync(realDest)
 
     ctx.body = responseWrapper({
@@ -89,10 +111,23 @@ const initRouter = (app: Koa<Koa.DefaultState, Koa.DefaultContext>) => {
     })
   })
 
+  // 更新根目录
+  router.post('/update-dest', (ctx) => {
+    const { dest } = ctx.request.body
+    setDefaultDest(dest || defaultDest)
+    ctx.body = responseWrapper()
+  })
+
+  // 获取根目录
+  router.get('/cur-dest', (ctx) => {
+    ctx.body = responseWrapper(defaultDest)
+  })
+
   // 下载文件
   router.post('/download', (ctx) => {
-    const { dest } = ctx.request.body
-    const file = fs.readFileSync(dest)
+    const { dest, root } = ctx.request.body
+    const realDest = path.resolve(root || defaultDest, dest || '')
+    const file = fs.readFileSync(realDest)
 
     ctx.body = file
   })
@@ -107,7 +142,16 @@ export const run = async () => {
   app.use(bodyParser())
 
   if (isProd()) {
-    Static(getRendererDir())
+    app.use(Static(getRendererDir()))
+  } else {
+    const p = getRendererDir()
+    app.use(Static(p))
+    // dev
+    // app.use(
+    //   proxy('/assistant', {
+    //     target: process.env.CLIENT_URL,
+    //   })
+    // )
   }
 
   initRouter(app)

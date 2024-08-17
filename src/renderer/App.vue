@@ -1,13 +1,31 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, shallowRef } from 'vue'
-import { downloadFile, getFiles, uploadFiles } from './api/http'
+import {
+  downloadFile,
+  getFiles,
+  uploadFiles,
+  updateDest,
+  getDest,
+} from './api/http'
 import type { AxiosProgressEvent } from 'axios'
 import dirLogo from '@/assets/imgs/dir.svg'
 import fileLogo from '@/assets/imgs/file.svg'
+import appLogo from '@/assets/imgs/local-network.svg'
 import { Button as AButton, UploadProps, message } from 'ant-design-vue'
-import { UploadOutlined, InboxOutlined } from '@ant-design/icons-vue'
-import { progres2Display } from './utils'
+import {
+  UploadOutlined,
+  InboxOutlined,
+  RedoOutlined,
+} from '@ant-design/icons-vue'
+import {
+  progres2Display,
+  inElectron,
+  withElectron,
+  getUrlQueryParams,
+} from './utils'
 import { selectDir } from './electron-api'
+
+const localUrl = getUrlQueryParams('localUrl')
 
 const [messageApi, contextHolder] = message.useMessage()
 
@@ -17,35 +35,55 @@ const disabled = computed(
   () => !(selectedFiles.value && selectedFiles.value.length)
 )
 
-const selectFile = (evt: any) => {
-  // const target = evt.target as HTMLInputElement
-  console.log(evt)
-
-  const files: File[] = evt.files
-
-  if (!files) {
-    return
-  }
-  selectedFiles.value = files
-  // selectedFiles.value.push(...Array.from(files))
-}
 const uploadProgress = ref(0)
 const isUploading = computed(
   () => !(uploadProgress.value === 0 || uploadProgress.value === 1)
 )
 // start upload
+
+const sliceSize = 256 * 1024 * 1024
+// const sliceSize = (256 * 1024 * 1024) / 20
+
+const sliceUpload = async (file: File) => {
+  let chunkNo = 0
+  const totalChunk = Math.ceil(file.size / sliceSize)
+
+  while (chunkNo < totalChunk) {
+    const formdata = new FormData()
+
+    const s = chunkNo * sliceSize
+    const e = (chunkNo + 1) * sliceSize
+
+    const fileSlice = new File([file.slice(s, e)], file.name)
+    formdata.append('jasonfiles', fileSlice)
+
+    formdata.append('chunkNo', (chunkNo + 1).toString())
+    formdata.append('totalChunk', totalChunk.toString())
+
+    const data = await uploadFiles(formdata, (evt: AxiosProgressEvent) => {
+      uploadProgress.value =
+        ((evt.progress || 0) * fileSlice.size + chunkNo * sliceSize) / file.size
+    })
+
+    if (data.code !== 'success') {
+      messageApi.error(data.data)
+      throw data.data
+    }
+    chunkNo++
+  }
+}
+
 const handleUpload = async () => {
   if (disabled.value) return
-  const formdata = new FormData()
+
   for (const file of selectedFiles.value) {
-    formdata.append('jasonfiles', file, file.name)
-    formdata.append('storagedir', storageDir.value)
+    await sliceUpload(file)
   }
 
-  await uploadFiles(formdata, (evt: AxiosProgressEvent) => {
-    console.log(evt.progress)
-    uploadProgress.value = evt.progress || 0
-  })
+  // await uploadFiles(formdata, (evt: AxiosProgressEvent) => {
+  //   console.log(evt.progress)
+  //   uploadProgress.value = evt.progress || 0
+  // })
 
   messageApi.success('上传完成')
   selectedFiles.value.length = 0
@@ -61,12 +99,12 @@ interface DisplayFile {
 const displayFiles = ref<DisplayFile[]>([])
 const storageDir = ref('')
 
-const fetchFiles = async (formdata?: { dest?: string }) => {
-  if (!formdata?.dest) {
-    formdata = {
-      dest: storageDir.value,
-    }
-  }
+const fetchFiles = async (formdata?: { root?: string; dest?: string }) => {
+  // if (!formdata?.dest) {
+  //   formdata = {
+  //     dest: storageDir.value,
+  //   }
+  // }
   const { data } = await getFiles(formdata)
 
   displayFiles.value = (data.list as DisplayFile[]).sort(
@@ -89,7 +127,7 @@ const toDir = async (f: DisplayFile) => {
 
   dirPathMap.value.push(dirname)
 
-  fetchFiles({ dest: storageDir.value + dirname })
+  fetchFiles({ root: storageDir.value, dest: dirname })
 }
 
 const goback = () => {
@@ -102,14 +140,15 @@ const goback = () => {
     fetchFiles({ dest: backpath })
   }
 }
-// 提交到git  跨平台
 // download file
 const handleDownloadFile = async (f: DisplayFile) => {
-  const dest = storageDir.value + f.name
-  const data = await downloadFile({ dest }, (evt) => {
-    console.log(evt.progress)
-    f.downloadProgressDisplay = progres2Display(evt.progress)
-  })
+  const data = await downloadFile(
+    { root: storageDir.value, dest: f.name },
+    (evt) => {
+      console.log(evt.progress)
+      f.downloadProgressDisplay = progres2Display(evt.progress)
+    }
+  )
   downloadFileByBlob(data, f.name)
   f.downloadProgressDisplay = undefined
 }
@@ -147,23 +186,48 @@ const handleRemove = (file: File) => {
 
 const defaultStorageDir = ref('')
 
+const LS_STORAGE_DIR = 'storageDir'
 onMounted(async () => {
-  const { storageDir } = await fetchFiles()
+  const cachedStorageDir = withElectron(
+    () => window.localStorage.getItem(LS_STORAGE_DIR) || undefined
+  )
+
+  inElectron && updateDest({ dest: cachedStorageDir })
+
+  const { storageDir } = await fetchFiles({ dest: cachedStorageDir })
 
   defaultStorageDir.value = storageDir
 })
 
-const editDir = async () => {
-  defaultStorageDir.value = await selectDir()
+const updateLocalDir = async (newDir: string) => {
+  defaultStorageDir.value = newDir
   storageDir.value = defaultStorageDir.value
-  fetchFiles()
+  fetchFiles({ root: storageDir.value })
+  withElectron(() =>
+    window.localStorage.setItem(LS_STORAGE_DIR, storageDir.value)
+  )
+}
+
+const editDir = async () => {
+  const dir = await selectDir()
+  dir && updateLocalDir(dir)
+  updateDest({ dest: storageDir.value })
+}
+
+const getNewDir = async () => {
+  const { data } = await getDest()
+  updateLocalDir(data)
 }
 </script>
 
 <template>
   <context-holder />
   <header class="header draggable">
-    <h1>内网文件传输助手</h1>
+    <div class="flex align-center">
+      <img :src="appLogo" width="26" alt="内网文件传输助手" />
+      <h1>内网文件传输助手</h1>
+    </div>
+    <p class="tips">使用其它设备浏览器打开：{{ localUrl }}</p>
   </header>
   <section class="content">
     <div class="upload-area">
@@ -182,7 +246,11 @@ const editDir = async () => {
 
       <p>
         存储目录：{{ defaultStorageDir }}
-        <a-button type="text" @click="editDir">修改</a-button>
+        <a-button v-if="inElectron" type="link" @click="editDir">修改</a-button>
+        <a-button v-else type="link" @click="getNewDir">
+          <redo-outlined />
+          刷新
+        </a-button>
       </p>
       <a-button
         v-if="isUploading"
@@ -235,73 +303,3 @@ const editDir = async () => {
     </ul>
   </section>
 </template>
-
-<style>
-.draggable {
-  -webkit-app-region: drag;
-}
-body {
-  height: 100vh;
-}
-
-.is-dir {
-  cursor: pointer;
-  text-decoration: underline;
-  &:active {
-    color: red;
-  }
-}
-
-.is-not-dir .filename {
-  /* margin-left: 28px; */
-}
-
-.file-list {
-  display: flex;
-  margin: 0.5rem 0;
-  gap: 16px 8px;
-  align-items: center;
-}
-
-.download {
-  text-decoration: underline;
-  color: blue;
-  margin-left: 1rem;
-  cursor: pointer;
-}
-
-.header,
-.content {
-  padding: 0 16px;
-}
-
-.header h1 {
-  margin: 0;
-  padding: 1rem;
-}
-
-.content,
-.header {
-  max-width: 750px;
-  margin: 0 auto;
-}
-
-.upload-area {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-}
-
-.upload-dragger {
-  width: 100%;
-  margin-bottom: 0.5rem;
-}
-
-.storage-dir {
-  word-break: break-all;
-}
-ul {
-  padding: 0;
-}
-</style>

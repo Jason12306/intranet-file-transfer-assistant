@@ -1,23 +1,29 @@
+import { getUrlQueryParams } from '@/utils'
 import axios from 'axios'
-import type { AxiosProgressEvent } from 'axios'
-import injectedConfig from '../injected-config.json'
+import type { AxiosInstance, AxiosProgressEvent } from 'axios'
 
-const http = axios.create({
-  baseURL: injectedConfig.baseUrl,
-})
+let http: AxiosInstance
 
-http.interceptors.response.use(
-  function (response) {
-    // Any status code that lie within the range of 2xx cause this function to trigger
-    // Do something with response data
-    return response.data
-  },
-  function (error) {
-    // Any status codes that falls outside the range of 2xx cause this function to trigger
-    // Do something with response error
-    return Promise.reject(error)
-  }
-)
+export const initAxios = async () => {
+  // const { apiUrl } = await window.electronAPI.getConfig()
+  const api = getUrlQueryParams('api')
+  http = axios.create({
+    baseURL: api,
+  })
+
+  http.interceptors.response.use(
+    function (response) {
+      // Any status code that lie within the range of 2xx cause this function to trigger
+      // Do something with response data
+      return response.data
+    },
+    function (error) {
+      // Any status codes that falls outside the range of 2xx cause this function to trigger
+      // Do something with response error
+      return Promise.reject(error)
+    }
+  )
+}
 
 export const uploadFiles = (
   data: FormData,
@@ -27,9 +33,16 @@ export const uploadFiles = (
     onUploadProgress,
   })
 
-export const getFiles = (data?: { dest?: string }) => http.post('/', data)
+export const getFiles = (data?: { dest?: string }) =>
+  http.post('/file-list', data)
+
+export const updateDest = (data?: { dest?: string }) =>
+  http.post('/update-dest', data)
+
+export const getDest = () => http.get('/cur-dest')
+
 export const downloadFile = (
-  data?: { dest?: string },
+  data?: { root?: string; dest?: string },
   onDownloadProgress?: (evt: AxiosProgressEvent) => void
 ) =>
   http.post<null, Blob>('/download', data, {
