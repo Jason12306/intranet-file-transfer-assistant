@@ -75,14 +75,16 @@
       }
     ],
     "mac": {
-      "category": "public.app-category.productivity"
+      "category": "public.app-category.productivity",
+      "artifactName": "${productName}-macOS-setup-${version}.${ext}"
+    },
+    "win": {
+      "target": "nsis",
+      "artifactName": "${productName}-windows-setup-${version}.${ext}"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true
-    },
-    "win": {
-      "target": "nsis"
     },
     "copyright": "Copyright © 2024 jason12306",
     "files": [
