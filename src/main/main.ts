@@ -54,9 +54,7 @@ app.whenReady().then(() => {
       // })
 
       const params = '?api=' + apiUrl + '&localUrl=' + localUrl
-      const url = app.isPackaged
-        ? localUrl + params
-        : process.env.CLIENT_URL + params
+      const url = app.isPackaged ? localUrl : process.env.CLIENT_URL + params
 
       createWindow(url)
     })

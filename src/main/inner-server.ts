@@ -46,6 +46,12 @@ const initRouter = (app: Koa<Koa.DefaultState, Koa.DefaultContext>) => {
   })
 
   const upload = multer()
+  // 获取配置
+  router.get('/config', (ctx) => {
+    ctx.body = responseWrapper({
+      localUrl,
+    })
+  })
 
   // 上传文件
   router.post(
@@ -135,6 +141,9 @@ const initRouter = (app: Koa<Koa.DefaultState, Koa.DefaultContext>) => {
   app.use(router.routes())
 }
 
+let ipAddr: string
+let localUrl: string
+
 export const run = async () => {
   const app = new Koa()
 
@@ -163,8 +172,8 @@ export const run = async () => {
 
   app.listen(port)
 
-  const ipAddr = ip.address()
-  const localUrl = `http://${ipAddr}:${port}`
+  ipAddr = ip.address()
+  localUrl = `http://${ipAddr}:${port}`
   console.log(`service is runing at ${localUrl}`)
 
   return {

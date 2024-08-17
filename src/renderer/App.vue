@@ -25,8 +25,7 @@ import {
 } from './utils'
 import { selectDir } from './electron-api'
 
-const localUrl = getUrlQueryParams('localUrl')
-
+const localUrl = location.origin
 const [messageApi, contextHolder] = message.useMessage()
 
 const selectedFiles = ref<File[]>([])

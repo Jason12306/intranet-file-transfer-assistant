@@ -8,7 +8,7 @@ export const initAxios = async () => {
   // const { apiUrl } = await window.electronAPI.getConfig()
   const api = getUrlQueryParams('api')
   http = axios.create({
-    baseURL: api,
+    baseURL: import.meta.env.PROD ? location.origin + '/api' : api,
   })
 
   http.interceptors.response.use(
@@ -32,6 +32,8 @@ export const uploadFiles = (
   http.post('/upload-multiple-files', data, {
     onUploadProgress,
   })
+
+export const getConfig = () => http.get('/config')
 
 export const getFiles = (data?: { dest?: string }) =>
   http.post('/file-list', data)

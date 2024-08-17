@@ -1,5 +1,7 @@
 # 内网文件传输助手
 
+<img src="src/renderer/assets/imgs/local-network.svg" width="50%"/>
+
 ## 介绍
 
 一款简单、轻量、高传输速率的文件传输助手客户端
