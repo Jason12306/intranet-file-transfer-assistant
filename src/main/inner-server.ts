@@ -108,6 +108,9 @@ const initRouter = (app: Koa<Koa.DefaultState, Koa.DefaultContext>) => {
       list: files
         .filter((f) => f !== '.DS_Store')
         .map((f) => {
+          if (f === 'My Music') {
+            console.log(1)
+          }
           const state = fs.lstatSync(path.resolve(realDest, f))
           return {
             name: f,

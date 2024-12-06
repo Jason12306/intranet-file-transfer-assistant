@@ -20,6 +20,7 @@
     "@koa/cors": "^5.0.0",
     "@koa/multer": "^3.0.2",
     "@koa/router": "^12.0.1",
+    "@types/ws": "^8.5.13",
     "ant-design-vue": "4.x",
     "axios": "^1.7.4",
     "ip": "^2.0.1",
@@ -31,7 +32,8 @@
     "pinia": "^2.0.17",
     "portfinder": "^1.0.32",
     "vue": "^3.2.37",
-    "vue-router": "4"
+    "vue-router": "4",
+    "ws": "^8.18.0"
   },
   "devDependencies": {
     "@types/ip": "^1.1.3",

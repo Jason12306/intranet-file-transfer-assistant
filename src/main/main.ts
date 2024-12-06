@@ -6,6 +6,7 @@ import { run as runInnerServer } from './inner-server'
 import { GET_CONFIG } from '../constants'
 import { EnvEnum, getRendererDir } from './utils'
 import './ipc'
+import { initWSServer } from './ws-server'
 
 /**
  * @description 注入环境变量
@@ -15,7 +16,7 @@ import './ipc'
 process.env.GLOBAL_IS_PACKAGED = app.isPackaged ? EnvEnum.prod : EnvEnum.dev
 // electron 的appPath
 process.env.GLOBAL_ENV_PWD = app.getAppPath()
-
+initWSServer()
 // 载入配置 start
 const { main } = electronConfig()
 const { browserWindowSize } = main
